@@ -12,7 +12,7 @@ const app = express();
 // Security Middleware
 app.use(helmet());
 app.use(cors({
-  origin: process.env.FRONTEND_URL || "http://localhost:5173", // Your Vite frontend URL
+  origin: process.env.FRONTEND_URL, // Your Vite frontend URL
   credentials: true
 }));
 
