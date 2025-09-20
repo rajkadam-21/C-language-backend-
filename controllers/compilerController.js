@@ -1,11 +1,17 @@
-import Docker from 'dockerode';
-const docker = new Docker(); // Connects to the local Docker daemon. Ensure it's running.
+import axios from 'axios'; // Added missing import
 
 export const compileAndRunC = async (req, res, next) => {
   const { code, input = '' } = req.body;
 
   if (!code) {
     return res.status(400).json({ error: 'Code is required' });
+  }
+
+  // Validate environment variables
+  if (!process.env.JUDGE0_RAPIDAPI_KEY || !process.env.JUDGE0_RAPIDAPI_HOST) {
+    return res.status(500).json({ 
+      error: 'Server configuration error: Missing Judge0 API credentials' 
+    });
   }
 
   // Judge0 API parameters
@@ -53,6 +59,25 @@ export const compileAndRunC = async (req, res, next) => {
 
   } catch (error) {
     console.error('Judge0 API error:', error.response?.data || error.message);
-    next(error);
+    
+    // More specific error handling
+    if (error.response) {
+      // The request was made and the server responded with a status code
+      // that falls out of the range of 2xx
+      res.status(502).json({ 
+        error: 'Compiler service unavailable',
+        details: error.response.data 
+      });
+    } else if (error.request) {
+      // The request was made but no response was received
+      res.status(503).json({ 
+        error: 'Compiler service not responding' 
+      });
+    } else {
+      // Something happened in setting up the request that triggered an Error
+      res.status(500).json({ 
+        error: 'Internal server error' 
+      });
+    }
   }
 };
